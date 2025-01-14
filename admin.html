@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indian Bytes - Admin Panel</title>
+    <link rel="stylesheet" href="admin-styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    <style>
+        /* User Cards */
+        .user-card {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .user-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .user-header i {
+            font-size: 2.5em;
+            color: #4CAF50;
+            margin-right: 15px;
+        }
+
+        .user-header h3 {
+            margin: 0;
+            color: #333;
+            font-size: 1.4em;
+        }
+
+        .user-details {
+            margin-top: 10px;
+        }
+
+        .user-details p {
+            margin: 8px 0;
+            color: #333;
+        }
+
+        .user-details i {
+            width: 25px;
+            color: #4CAF50;
+            margin-right: 10px;
+        }
+
+        /* Order Cards */
+        .order-card {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .order-header h3 {
+            margin: 0;
+            color: #333;
+            font-size: 1.4em;
+        }
+
+        .order-details {
+            margin-top: 10px;
+        }
+
+        .order-details p {
+            margin: 8px 0;
+            color: #333;
+        }
+
+        .order-actions {
+            margin-top: 15px;
+            text-align: right;
+        }
+
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .status-badge.pending {
+            background: #ffd700;
+            color: #000;
+        }
+
+        .status-badge.completed {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .status-btn {
+            padding: 5px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+
+        .status-btn.pending {
+            background: #ffd700;
+            color: #000;
+        }
+
+        .status-btn.completed {
+            background: #4CAF50;
+            color: white;
+        }
+
+        /* Search Box */
+        .search-box {
+            position: relative;
+            margin: 20px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 45px 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .search-box::after {
+            content: '🔍';
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        /* Grid Layout */
+        #users-list, #orders-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        /* Categories */
+        .category-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #ffffff;
+            padding: 10px 15px;
+            margin: 5px 0;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .category-item span {
+            font-size: 1em;
+            color: #333;
+        }
+
+        .delete-btn {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .delete-btn:hover {
+            background: #cc0000;
+        }
+
+        /* Food Items Management */
+        .food-items-section {
+            padding: 20px;
+        }
+
+        .food-item-card {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .food-item-card img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .food-item-info {
+            flex-grow: 1;
+        }
+
+        .food-item-info h3 {
+            margin: 0 0 5px 0;
+            color: #333;
+        }
+
+        .food-item-info p {
+            margin: 5px 0;
+            color: #666;
+        }
+
+        .delete-food-btn {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .delete-food-btn:hover {
+            background: #cc0000;
+        }
+
+        /* PC Layout (above 768px) */
+        @media screen and (min-width: 769px) {
+            .admin-section {
+                padding: 30px;
+                margin: 20px;
+            }
+
+            .food-items-section {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 30px;
+                padding: 20px;
+            }
+
+            .food-item-card {
+                margin: 0;
+            }
+
+            #users-container, #orders-container {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 20px;
+            }
+
+            .form-group {
+                display: grid;
+                grid-template-columns: 1fr 2fr;
+                gap: 20px;
+                align-items: center;
+            }
+
+            .submit-btn {
+                width: auto;
+                padding: 12px 30px;
+            }
+        }
+
+        /* Mobile Layout (768px and below) */
+        @media screen and (max-width: 768px) {
+            .admin-section {
+                padding: 15px;
+                margin: 10px;
+            }
+
+            .food-items-section {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 15px;
+                padding: 10px;
+            }
+
+            .food-item-card {
+                margin: 0;
+                flex-direction: column;
+            }
+
+            .food-item-card img {
+                width: 100%;
+                height: 150px;
+            }
+
+            #users-container, #orders-container {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .form-group {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .form-group label {
+                margin-bottom: 5px;
+            }
+
+            .submit-btn {
+                width: 100%;
+                padding: 12px;
+            }
+
+            .delete-btn, .delete-food-btn {
+                padding: 8px 16px;
+                font-size: 0.9em;
+            }
+
+            input[type="text"],
+            input[type="number"],
+            input[type="file"],
+            select {
+                width: 100%;
+                padding: 8px;
+            }
+        }
+
+        /* Login Overlay Styles */
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .login-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-container h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+
+        .login-form input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .login-form button {
+            width: 100%;
+            padding: 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+
+        .login-form button:hover {
+            background: #45a049;
+        }
+
+        .login-error {
+            color: red;
+            text-align: center;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .admin-container {
+            display: none;
+        }
+
+        .admin-container.visible {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Overlay -->
+    <div id="loginOverlay" class="login-overlay">
+        <div class="login-container">
+            <h2>Admin Login</h2>
+            <form id="loginForm" class="login-form">
+                <input type="text" id="username" placeholder="Username" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit">Login</button>
+                <p id="loginError" class="login-error">Invalid username or password</p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add notification sound element -->
+    <audio id="notificationSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
+
+    <div id="adminContainer" class="admin-container">
+        <header>
+            <h1>Indian Bytes Admin</h1>
+            <div class="notification-bell">
+                <i class="fas fa-bell"></i>
+                <span class="notification-count">0</span>
+            </div>
+        </header>
+
+        <main>
+            <div id="users-section" class="section active">
+                <h2>Users</h2>
+                <div class="users-container" id="users-container">
+                    <!-- Users will be dynamically added here -->
+                </div>
+            </div>
+
+            <div id="users-section" class="section">
+                <h2>Registered Users</h2>
+                <div id="users-container" class="users-container">
+                    <!-- Users will be listed here -->
+                </div>
+            </div>
+
+            <div id="orders-section" class="section">
+                <h2>Orders</h2>
+                <div class="orders-container" id="orders-container">
+                    <!-- Orders will be dynamically added here -->
+                </div>
+            </div>
+
+            <div id="search-section" class="section">
+                <h2>Food Items</h2>
+                <div class="search-container">
+                    <input type="text" id="search-input" placeholder="Search food items...">
+                    <button id="search-btn"><i class="fas fa-search"></i></button>
+                </div>
+                <div class="food-items-container" id="food-items-container">
+                    <!-- Food items will be dynamically added here -->
+                </div>
+            </div>
+
+            <div id="add-food-section" class="section">
+                <h2>Add New Food Item</h2>
+                <form id="add-food-form" class="add-food-form">
+                    <div class="form-group">
+                        <label for="food-name">Food Name</label>
+                        <input type="text" id="food-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="food-price">Price (₹)</label>
+                        <input type="number" id="food-price" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="food-category">Category</label>
+                        <select id="food-category" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="food-image">Food Image URL</label>
+                        <input type="url" id="food-image" required placeholder="Enter image URL (e.g., https://example.com/image.jpg)">
+                    </div>
+                    <button type="submit" class="submit-btn">Add Food Item</button>
+                </form>
+
+                <h2>Manage Food Items</h2>
+                <div id="food-items-management" class="food-items-section">
+                    <!-- Food items will be listed here -->
+                </div>
+
+                <h2>Manage Categories</h2>
+                <form id="add-category-form" class="add-category-form">
+                    <div class="form-group">
+                        <label for="category-name">Category Name</label>
+                        <input type="text" id="category-name" required>
+                    </div>
+                    <button type="submit" class="submit-btn">Add Category</button>
+                </form>
+                <div id="categories-list" class="categories-list">
+                    <!-- Categories will be listed here -->
+                </div>
+            </div>
+        </main>
+
+        <nav class="bottom-nav">
+            <button class="nav-btn active" data-section="users">
+                <i class="fas fa-users"></i>
+                <span>Users</span>
+            </button>
+            <button class="nav-btn" data-section="orders">
+                <i class="fas fa-list-alt"></i>
+                <span>Orders</span>
+            </button>
+            <button class="nav-btn" data-section="search">
+                <i class="fas fa-search"></i>
+                <span>Search</span>
+            </button>
+            <button class="nav-btn" data-section="add-food">
+                <i class="fas fa-plus-circle"></i>
+                <span>Add Food</span>
+            </button>
+        </nav>
+    </div>  <!-- This is the end of your admin-container div -->
+    <!-- Notification Modal -->
+    <div id="notification-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>New Orders</h2>
+            <div id="notification-list"></div>
+        </div>
+    </div>
+
+    <!-- =========== ADD ALL FIREBASE CODE BELOW THIS LINE =========== -->
+    <!-- Firebase App (the core Firebase SDK) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <!-- Firebase Database -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <!-- Firebase Storage -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <!-- Firebase Analytics -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
+
+    <!-- Initialize Firebase with your config -->
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyB5GRa8dNMIfXGyeRWVKspNO__iPVF9JVo",
+            authDomain: "indian-bytes-aeb56.firebaseapp.com",
+            databaseURL: "https://indian-bytes-aeb56-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "indian-bytes-aeb56",
+            storageBucket: "indian-bytes-aeb56.appspot.com",
+            messagingSenderId: "810709997004",
+            appId: "1:810709997004:web:05a3e42a527c90a29df969",
+            measurementId: "G-0EK3WYYBLK"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+    </script>
+    <script>
+        // Admin Authentication Check
+        function checkAdminAuth() {
+            const isLoggedIn = sessionStorage.getItem('adminLoggedIn');
+            const loginOverlay = document.getElementById('loginOverlay');
+            const adminContainer = document.getElementById('adminContainer');
+            
+            if (!isLoggedIn) {
+                loginOverlay.style.display = 'flex';
+                adminContainer.classList.remove('visible');
+            } else {
+                loginOverlay.style.display = 'none';
+                adminContainer.classList.add('visible');
+            }
+        }
+
+        // Initialize Admin Panel
+        window.onload = function() {
+            checkAdminAuth();
+        }
+    </script>
+    <script src="Admin.js"></script>
+</body>
+</html>
